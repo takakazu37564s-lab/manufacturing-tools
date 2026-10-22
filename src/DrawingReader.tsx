@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import { useEffect, useState } from 'react';
 
 type DrawingData = { drawingNumber: string; material: string; thickness: string; dimensions: string; quantity: string; notes: string };
