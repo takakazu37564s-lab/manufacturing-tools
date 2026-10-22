@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { calculateWeight, materials, shapeNames, type Shape, type WeightInput } from './weight';
 import { calculateTriangle, type TriangleInput } from './trigonometry';
+import { DrawingReader } from './DrawingReader';
 import './style.css';
-const tools = [ ['▱', '材料重量計算', '形状と材質から重量を算出'], ['∠', '三角関数計算', '角度・辺の長さをすばやく確認'], ['◒', '配合比計算', '配合比から必要な量を算出'], ['⚙', '切削条件計算', '加工に合わせた切削条件を確認'], ['▤', '定尺材の取り数計算', '材料から取れる個数を算出'], ['◷', '成形数量・時間計算', '生産数と所要時間を見積もり'], ['↻', '回転数・周速計算', '回転数と周速を相互に変換'], ['✧', 'AI図面見積もり', '図面から見積もりをサポート'] ];
+const tools = [ ['▱', '材料重量計算', '形状と材質から重量を算出'], ['∠', '三角関数計算', '角度・辺の長さをすばやく確認'], ['◒', '配合比計算', '配合比から必要な量を算出'], ['⚙', '切削条件計算', '加工に合わせた切削条件を確認'], ['▤', '定尺材の取り数計算', '材料から取れる個数を算出'], ['◷', '成形数量・時間計算', '生産数と所要時間を見積もり'], ['↻', '回転数・周速計算', '回転数と周速を相互に変換'], ['✧', 'AI図面読み込み', 'PDF・画像の図面を確認'] ];
 const fields = { length: '長さ L', width: '幅 W', height: '高さ H', diameter: '外径 D', thickness: '肉厚 t' };
 function Diagram({ shape }: { shape: Shape }) {
   return <svg viewBox="0 0 320 180" role="img" aria-label={`${shapeNames[shape]}の寸法図（模式図）`}>
@@ -37,7 +38,7 @@ function App() {
   const format = (n: number) => n < 0.0001 ? n.toExponential(3) : n.toLocaleString('ja-JP', { maximumFractionDigits: 4 });
   return <><header><div className="brand"><span className="logo">▦</span><span>ものづくり計算室<small>MANUFACTURING TOOLS</small></span></div><span className="header-note">現場の計算を、もっと手軽に。</span></header>
   <main><section className="intro"><span className="eyebrow">TOOLS FOR YOUR WORKSHOP</span><h1>ものづくりに、<br className="mobile"/>確かな数字を。</h1><p>材料の重量から加工条件まで。製造現場で役立つ計算ツール。</p></section>
-  <nav className="tool-grid" aria-label="計算ツール一覧">{tools.map(([icon, title, desc], i) => i < 2 ? <a className="tool active" href={i === 0 ? '#calculator' : '#trigonometry'} key={title}><span className="tool-icon">{icon}</span><span><b>{title}</b><small>{desc}</small></span><span className="chevron">↗</span></a> : <div className="tool upcoming" key={title}><span className="tool-icon">{icon}</span><span><b>{title}</b><small>{desc}</small></span><span className="badge">準備中</span></div>)}</nav>
+  <nav className="tool-grid" aria-label="計算ツール一覧">{tools.map(([icon, title, desc], i) => (i < 2 || i === 7) ? <a className="tool active" href={i === 0 ? '#calculator' : i === 1 ? '#trigonometry' : '#drawing-reader'} key={title}><span className="tool-icon">{icon}</span><span><b>{title}</b><small>{desc}</small></span><span className="chevron">↗</span></a> : <div className="tool upcoming" key={title}><span className="tool-icon">{icon}</span><span><b>{title}</b><small>{desc}</small></span><span className="badge">準備中</span></div>)}</nav>
   <section className="calculator" id="calculator"><div className="section-heading"><div><span className="eyebrow">01 / MATERIAL WEIGHT</span><h2>材料重量計算</h2><p>材質と寸法を入力すると、重量をすぐに計算できます。</p></div><span className="live"><i/> リアルタイム計算</span></div>
   <div className="workspace"><div className="form"><h3><span>1</span> 形状を選択</h3><div className="shape-tabs" role="group" aria-label="材料形状">{(Object.keys(shapeNames) as Shape[]).map(s => <button key={s} aria-pressed={shape === s} onClick={() => setShape(s)}>{shapeNames[s]}</button>)}</div>
   <h3><span>2</span> 材質・寸法を入力</h3><div className="inputs"><label className="full">材質<select value={material} onChange={e => { setMaterial(e.target.value); if(e.target.value !== 'custom') set('density', String(materials[Number(e.target.value)].density)); }}>{materials.map((m,i) => <option key={m.name} value={i}>{m.name}</option>)}<option value="custom">カスタム密度</option></select></label>
@@ -49,6 +50,7 @@ function App() {
   <p className="notice">ⓘ 計算結果は理論値に基づく概算です。実際の重量は材質の組成、寸法公差、角部の丸みなどにより異なります。</p></aside></div>
   <details><summary>計算式・単位について</summary><p>重量（kg）＝断面積（mm²）×長さ（mm）×密度（g/cm³）÷1,000,000。合計重量＝1個当たりの重量×数量。</p><p>板：W×t ／ 丸棒：πD²÷4 ／ 丸パイプ：π［D²−(D−2t)²］÷4 ／ 角パイプ：W×H−(W−2t)(H−2t)。角パイプの角部は直角として計算します。</p></details></section>
   <TriangleCalculator/>
+  <DrawingReader/>
   <footer><span>▦ ものづくり計算室</span><span>毎日のものづくりを支える、小さな道具箱。</span></footer></main></>;
 }
 createRoot(document.getElementById('root')!).render(<React.StrictMode><App/></React.StrictMode>);
