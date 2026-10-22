@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import React, { useEffect, useState } from 'react';
 
 type DrawingFields = { material: string; thickness: string; length: string; width: string; quantity: string; notes: string };
