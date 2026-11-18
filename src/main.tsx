@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { calculateWeight, materials, shapeNames, type Shape, type WeightInput } from './weight';
 import { calculateTriangle, type TriangleInput } from './trigonometry';
@@ -30,6 +30,16 @@ function TriangleCalculator() {
     <details><summary>計算式について</summary><p>斜辺 c＝√(a²＋b²)、角度 θ＝atan2(b, a)×180/π。斜辺と角度からは a＝c×cosθ、b＝c×sinθ。底辺と角度からは b＝a×tanθ、c＝a÷cosθ。</p></details></section>;
 }
 function App() {
+  const [activeTool, setActiveTool] = useState<string | null>(null);
+  const toolIds = ['calculator','trigonometry','mix-ratio','cutting','stock-yield','production','rotation','drawing-reader'];
+  const openTool = (id: string) => { setActiveTool(id); window.history.replaceState(null, '', '#' + id); window.scrollTo(0, 0); };
+  const backToMenu = () => { setActiveTool(null); window.history.replaceState(null, '', window.location.pathname + window.location.search); window.scrollTo(0, 0); };
+  useEffect(() => {
+    const syncHash = () => { const id = window.location.hash.slice(1); setActiveTool(toolIds.includes(id) ? id : null); window.scrollTo(0, 0); };
+    syncHash();
+    window.addEventListener('hashchange', syncHash);
+    return () => window.removeEventListener('hashchange', syncHash);
+  }, []);
   const [shape, setShape] = useState<Shape>('plate');
   const [material, setMaterial] = useState('0');
   const [values, setValues] = useState({ density: '7.85', length: '1000', width: '100', height: '50', diameter: '50', thickness: '10', quantity: '1' });
@@ -39,9 +49,10 @@ function App() {
   const keys: (keyof typeof fields)[] = shape === 'plate' ? ['length', 'width', 'thickness'] : shape === 'bar' ? ['length', 'diameter'] : shape === 'roundPipe' ? ['length', 'diameter', 'thickness'] : ['length', 'width', 'height', 'thickness'];
   const format = (n: number) => n < 0.0001 ? n.toExponential(3) : n.toLocaleString('ja-JP', { maximumFractionDigits: 4 });
   return <><header><div className="brand"><span className="logo">▦</span><span>ものづくり計算室<small>MANUFACTURING TOOLS</small></span></div><span className="header-note">現場の計算を、もっと手軽に。</span></header>
-  <main><section className="intro"><span className="eyebrow">TOOLS FOR YOUR WORKSHOP</span><h1>ものづくりに、<br className="mobile"/>確かな数字を。</h1><p>材料の重量から加工条件まで。製造現場で役立つ計算ツール。</p></section>
-  <nav className="tool-grid" aria-label="計算ツール一覧">{tools.map(([icon, title, desc], i) => <a className="tool active" href={['#calculator','#trigonometry','#mix-ratio','#cutting','#stock-yield','#production','#rotation','#drawing-reader'][i]} key={title}><span className="tool-icon">{icon}</span><span><b>{title}</b><small>{desc}</small></span><span className="chevron">↗</span></a>)}</nav>
-  <section className="calculator" id="calculator"><div className="section-heading"><div><span className="eyebrow">01 / MATERIAL WEIGHT</span><h2>材料重量計算</h2><p>材質と寸法を入力すると、重量をすぐに計算できます。</p></div><span className="live"><i/> リアルタイム計算</span></div>
+  <main><div hidden={activeTool !== null}><section className="intro"><span className="eyebrow">TOOLS FOR YOUR WORKSHOP</span><h1>ものづくりに、<br className="mobile"/>確かな数字を。</h1><p>材料の重量から加工条件まで。製造現場で役立つ計算ツール。</p></section>
+  <nav className="tool-grid" aria-label="計算ツール一覧">{tools.map(([icon, title, desc], i) => <button type="button" className="tool active" onClick={() => openTool(toolIds[i])} key={title}><span className="tool-icon">{icon}</span><span><b>{title}</b><small>{desc}</small></span><span className="chevron">↗</span></button>)}</nav></div>
+  {activeTool !== null && <div className="tool-page-top"><button type="button" className="back-menu" onClick={backToMenu}>← 計算メニューへ戻る</button><span>ものづくり計算室</span></div>}
+  <div hidden={activeTool !== "calculator"}><section className="calculator" id="calculator"><div className="section-heading"><div><span className="eyebrow">01 / MATERIAL WEIGHT</span><h2>材料重量計算</h2><p>材質と寸法を入力すると、重量をすぐに計算できます。</p></div><span className="live"><i/> リアルタイム計算</span></div>
   <div className="workspace"><div className="form"><h3><span>1</span> 形状を選択</h3><div className="shape-tabs" role="group" aria-label="材料形状">{(Object.keys(shapeNames) as Shape[]).map(s => <button key={s} aria-pressed={shape === s} onClick={() => setShape(s)}>{shapeNames[s]}</button>)}</div>
   <h3><span>2</span> 材質・寸法を入力</h3><div className="inputs"><label className="full">材質<select value={material} onChange={e => { setMaterial(e.target.value); if(e.target.value !== 'custom') set('density', String(materials[Number(e.target.value)].density)); }}>{materials.map((m,i) => <option key={m.name} value={i}>{m.name}</option>)}<option value="custom">カスタム密度</option></select></label>
   <label className="full">材料密度<div className="input-unit"><input onWheel={e=>e.currentTarget.blur()} onFocus={e=>e.currentTarget.select()} onClick={e=>e.currentTarget.select()} type="number" min="0" step="any" value={values.density} readOnly={material !== 'custom'} onChange={e => set('density', e.target.value)}/><span>g/cm³</span></div><small>密度を直接指定する場合は「カスタム密度」を選択</small></label>
@@ -51,13 +62,15 @@ function App() {
   <div className="result" aria-live="polite" aria-atomic="true"><div className="result-heading">計算結果<span>概算</span></div>{result.ok ? <><div className="unit-result"><span>1個当たりの重量</span><b>{format(result.unit)} <small>kg</small></b></div><div className="total-result"><span>合計重量 <small>× {values.quantity} 個</small></span><strong>{format(result.total)} <small>kg</small></strong></div></> : <div className="errors" role="alert"><b>入力内容を確認してください</b><ul>{result.errors.map(error => <li key={error}>{error}</li>)}</ul></div>}<div className="density-note">使用密度：{Number.isFinite(input.density) ? values.density : '—'} g/cm³</div></div>
   <p className="notice">ⓘ 計算結果は理論値に基づく概算です。実際の重量は材質の組成、寸法公差、角部の丸みなどにより異なります。</p></aside></div>
   <details><summary>計算式・単位について</summary><p>重量（kg）＝断面積（mm²）×長さ（mm）×密度（g/cm³）÷1,000,000。合計重量＝1個当たりの重量×数量。</p><p>板：W×t ／ 丸棒：πD²÷4 ／ 丸パイプ：π［D²−(D−2t)²］÷4 ／ 角パイプ：W×H−(W−2t)(H−2t)。角パイプの角部は直角として計算します。</p></details></section>
-  <TriangleCalculator/>
-  <MixRatioCalculator/>
-  <CuttingCalculator/>
-  <StockCalculator/>
-  <ProductionCalculator/>
-  <RotationCalculator/>
-  <DrawingReader/>
+  </div>
+  <div hidden={activeTool !== "trigonometry"}><TriangleCalculator/></div>
+  <div hidden={activeTool !== "mix-ratio"}><MixRatioCalculator/></div>
+  <div hidden={activeTool !== "cutting"}><CuttingCalculator/></div>
+  <div hidden={activeTool !== "stock-yield"}><StockCalculator/></div>
+  <div hidden={activeTool !== "production"}><ProductionCalculator/></div>
+  <div hidden={activeTool !== "rotation"}><RotationCalculator/></div>
+  <div hidden={activeTool !== "drawing-reader"}><DrawingReader/></div>
+  {activeTool !== null && <button type="button" className="floating-menu" onClick={backToMenu} aria-label="計算メニューに戻る">▦ 計算メニューへ</button>}
   <footer><span>▦ ものづくり計算室</span><span>毎日のものづくりを支える、小さな道具箱。</span></footer></main></>;
 }
 createRoot(document.getElementById('root')!).render(<React.StrictMode><App/></React.StrictMode>);
