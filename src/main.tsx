@@ -2,11 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { calculateWeight, materials, shapeNames, type Shape, type WeightInput } from './weight';
 import { calculateTriangle, type TriangleInput } from './trigonometry';
-import { DrawingReader } from './DrawingReader';
 import { MixRatioCalculator } from './MixRatioCalculator';
 import { CuttingCalculator, StockCalculator, ProductionCalculator, RotationCalculator } from './WorkshopCalculators';
 import './style.css';
-const tools = [ ['▱', '材料重量計算', '形状と材質から重量を算出'], ['∠', '三角関数計算', '角度・辺の長さをすばやく確認'], ['◒', '配合比計算', '配合比から必要な量を算出'], ['⚙', '切削条件計算', '加工に合わせた切削条件を確認'], ['▤', '定尺材の取り数計算', '材料から取れる個数を算出'], ['◷', '成形数量・時間計算', '生産数と所要時間を見積もり'], ['↻', '回転数・周速計算', '回転数と周速を相互に変換'], ['✧', 'AI図面読み込み', 'PDF・画像の図面を確認'] ];
+const tools = [ ['▱', '材料重量計算', '形状と材質から重量を算出'], ['∠', '三角関数計算', '角度・辺の長さをすばやく確認'], ['◒', '配合比計算', '配合比から必要な量を算出'], ['⚙', '切削条件計算', '加工に合わせた切削条件を確認'], ['▤', '定尺材の取り数計算', '材料から取れる個数を算出'], ['◷', '成形数量・時間計算', '生産数と所要時間を見積もり'], ['↻', '回転数・周速計算', '回転数と周速を相互に変換'] ];
 const fields = { length: '長さ L', width: '幅 W', height: '高さ H', diameter: '外径 D', thickness: '肉厚 t' };
 function Diagram({ shape }: { shape: Shape }) {
   return <svg viewBox="0 0 320 180" role="img" aria-label={`${shapeNames[shape]}の寸法図（模式図）`}>
@@ -31,7 +30,7 @@ function TriangleCalculator() {
 }
 function App() {
   const [activeTool, setActiveTool] = useState<string | null>(null);
-  const toolIds = ['calculator','trigonometry','mix-ratio','cutting','stock-yield','production','rotation','drawing-reader'];
+  const toolIds = ['calculator','trigonometry','mix-ratio','cutting','stock-yield','production','rotation'];
   const openTool = (id: string) => { setActiveTool(id); window.history.replaceState(null, '', '#' + id); window.scrollTo(0, 0); };
   const backToMenu = () => { setActiveTool(null); window.history.replaceState(null, '', window.location.pathname + window.location.search); window.scrollTo(0, 0); };
   useEffect(() => {
@@ -69,7 +68,6 @@ function App() {
   <div hidden={activeTool !== "stock-yield"}><StockCalculator/></div>
   <div hidden={activeTool !== "production"}><ProductionCalculator/></div>
   <div hidden={activeTool !== "rotation"}><RotationCalculator/></div>
-  <div hidden={activeTool !== "drawing-reader"}><DrawingReader/></div>
   {activeTool !== null && <button type="button" className="floating-menu" onClick={backToMenu} aria-label="計算メニューに戻る">▦ 計算メニューへ</button>}
   <footer><span>▦ ものづくり計算室</span><span>毎日のものづくりを支える、小さな道具箱。</span></footer></main></>;
 }
